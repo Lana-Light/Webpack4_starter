@@ -1,0 +1,60 @@
+{
+  "name": "webpack-starter",
+  "version": "1.0.0",
+  "description": "webpack4 starter for pug and scss projects",
+  "main": "index.js",
+  "browserslist": [
+    "> 1%",
+    "not ie 11",
+    "not dead"
+  ],
+  "scripts": {
+    "start": "webpack-dev-server --open",
+    "watch": "webpack --watch",
+    "build": "webpack --mode production",
+    "dev": "webpack-dev-server --open --config webpack.config.js --mode development",
+    "test": "npm test"
+  },
+  "keywords": [
+    "webpack",
+    "pug",
+    "scss",
+    "babel"
+  ],
+  "author": "Lana-Light",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@babel/plugin-transform-runtime": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "advpng-bin": "^3.0.0",
+    "babel-loader": "^8.0.5",
+    "browserslist": "^4.5.2",
+    "clean-webpack-plugin": "^2.0.1",
+    "css-loader": "^2.1.1",
+    "cssnano": "^4.1.10",
+    "extract-css-chunks-webpack-plugin": "^4.0.1",
+    "file-loader": "^3.0.1",
+    "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.2.0",
+    "imagemin-advpng": "^5.0.0",
+    "imagemin-gifsicle": "^6.0.1",
+    "imagemin-mozjpeg": "^8.0.0",
+    "imagemin-svgo": "^7.0.0",
+    "imagemin-webpack": "^4.1.0",
+    "lodash": "^4.17.11",
+    "node-sass": "^4.11.0",
+    "postcss-loader": "^3.0.0",
+    "postcss-preset-env": "^6.6.0",
+    "pug": "^2.0.3",
+    "pug-html-loader": "^1.1.5",
+    "sass-loader": "^7.1.0",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0",
+    "webpack-dev-server": "^3.2.1"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.2.5",
+    "@babel/runtime": "^7.3.4"
+  }
+}
