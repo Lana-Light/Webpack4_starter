@@ -15,7 +15,9 @@ let css = {
   test: /\.scss$/,
   use: [
     ExtractCssChunks.loader,
-    "css-loader"
+    {
+      loader: "css-loader"
+    }
   ]
 };
 let devServer = {
@@ -79,7 +81,7 @@ let common = {
   }
 };
 module.exports = function(env, argv) {
-  if (argv.mode == "production") {
+  if (argv.mode == "production" || !argv.mode) {
     css.use.push(
       {
         loader: "postcss-loader",
@@ -100,8 +102,16 @@ module.exports = function(env, argv) {
       })
     );
   } else if (argv.mode == "development") {
-    css.use.push("sass-loader");
-    common.devtool = "cheap-module-eval-source-map";
+    css.use.push({
+      loader: "sass-loader",
+      options: {
+        sourceMap: true
+      }
+    });
+    css.use[1].options = {
+      sourceMap: true
+    };
+    common.devtool = "cheap-module-source-map";
     common.devServer = devServer;
   }
   return common;
