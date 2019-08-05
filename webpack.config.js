@@ -87,6 +87,7 @@ module.exports = function(env, argv) {
         loader: "postcss-loader",
         options: { plugins: [postcssPresetEnv(), cssnano] }
       },
+      "group-css-media-queries-loader",
       "sass-loader"
     );
     common.plugins.push(
