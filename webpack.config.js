@@ -14,7 +14,9 @@ const svgo = require("imagemin-svgo");
 let css = {
   test: /\.scss$/,
   use: [
-    ExtractCssChunks.loader,
+    {
+      loader: ExtractCssChunks.loader
+    },
     {
       loader: "css-loader"
     }
@@ -59,12 +61,12 @@ let common = {
       template: path.join(__dirname, "src", "pug", "index.pug") // + "/pug/index.pug"
     }),
     new ExtractCssChunks({
-      filename: "[name].[contenthash].css"
+      filename: "[name].css"
     }),
     new webpack.HashedModuleIdsPlugin()
   ],
   output: {
-    filename: "[name].[contenthash].js",
+    filename: "[name].js",
     path: path.resolve(__dirname, "dist")
   },
   optimization: {
@@ -90,6 +92,10 @@ module.exports = function(env, argv) {
       "group-css-media-queries-loader",
       "sass-loader"
     );
+    common.output.filename = "[name].[contenthash].js";
+    common.plugins[2] = new ExtractCssChunks({
+      filename: "[name].[contenthash].css"
+    });
     common.plugins.push(
       new ImageminPlugin({
         imageminOptions: {
@@ -103,6 +109,11 @@ module.exports = function(env, argv) {
       })
     );
   } else if (argv.mode == "development") {
+    if (argv.hot) {
+      css.use[0].options = {
+        hot: true
+      };
+    }
     css.use.push({
       loader: "sass-loader",
       options: {
