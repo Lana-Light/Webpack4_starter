@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "grid": "node smart-grid.config.js",
-    "start": "webpack-dev-server --open",
+    "start": "webpack-dev-server --open --mode development --hot",
     "watch": "webpack --watch",
     "build": "webpack --mode production",
     "dev": "webpack-dev-server --open --config webpack.config.js --mode development",
