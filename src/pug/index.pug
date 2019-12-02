@@ -1,8 +1,42 @@
 doctype html
 html(lang="en")
   head
-    title pageTitle
-  body
+    - var title = htmlWebpackPlugin.options.title || "pageTitle";
+    title= title
+    - var meta = htmlWebpackPlugin.options.meta;
+    - if(typeof meta == "object" && !Array.isArray(meta))
+    - meta = Object.keys(meta).length? meta : [{charset:"UTF-8"},{name:"viewport", content:"width=device-width, initial-scale=1"}];
+    - if(Array.isArray(meta)) {
+    each attrs in meta
+      link&attributes(attrs)
+    - } else if(typeof meta == "object") {
+    each val, key in meta
+      link(name=key, content=val)
+    - }
+    - var css = htmlWebpackPlugin.files.css || [];
+    each val, key in css
+      link(href=val, rel="stylesheet")
+    - var allJs = htmlWebpackPlugin.files.js || [];
+    - var modern =htmlWebpackPlugin.options.modernScripts || allJs;
+    - var legacy = htmlWebpackPlugin.options.legacyScripts || [];
+    each val, key in modern
+      link(href=val, rel="preload",  as="script", crossorigin="")
+  body  
     include header.pug
     include main.pug
     include footer.pug
+    script(type="module")
+      each val, key in modern
+        | var script#{key}= document.createElement('script');
+        | script#{key}.type = 'module';
+        | script#{key}.src = '#{val}';
+        | document.body.appendChild(script#{key});
+    script(nomodule)
+      | var check = document.createElement('script');
+      | if(!('onbeforeload' in check)) {
+      each val, key in legacy.length
+        | var script#{key}= document.createElement('script');
+        | script#{key}.type = 'text/javascript';
+        | script#{key}.src = '#{val}';
+        | document.body.appendChild(script#{key});  
+      | }

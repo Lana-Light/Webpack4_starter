@@ -1,7 +1,10 @@
 const presets = [
   [
     "@babel/env",
-    {
+    {  
+      targets: {
+      	esmodules: true
+      },
       useBuiltIns: "usage"
     }
   ]

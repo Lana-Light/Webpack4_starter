@@ -1,6 +1,7 @@
 const path = require("path");
 const CleanWebpackPlugin = require("clean-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const HtmlWebpackMultiBuildPlugin = require("html-webpack-multi-build-plugin");
 const ExtractCssChunks = require("extract-css-chunks-webpack-plugin");
 const postcssPresetEnv = require("postcss-preset-env");
 const cssnano = require("cssnano");
@@ -11,7 +12,10 @@ const mozjpeg = require("imagemin-mozjpeg");
 const advpng = require("imagemin-advpng");
 const svgo = require("imagemin-svgo");
 
-let css = {
+const configFileES5 = path.join(__dirname, "babel.config-es5.js");
+const configFileES6 = path.join(__dirname, "babel.config.js");
+
+const css = {
   test: /\.scss$/,
   use: [
     {
@@ -22,7 +26,22 @@ let css = {
     }
   ]
 };
-let devServer = {
+const rules = [
+  css,
+  {
+    test: /\.pug$/,
+    use: [{ loader: "pug-loader", options: { pretty: true } }]
+  },
+  {
+    test: /\.(png|svg|jpe?g|gif)$/,
+    use: ["file-loader?name=[name].[ext]&outputPath=images/"]
+  },
+  {
+    test: /\.(woff|woff2|eot|ttf|otf)$/,
+    use: ["file-loader?name=[name].[ext]&outputPath=fonts/"]
+  }
+];
+const devServer = {
   contentBase: path.join(__dirname, "dist"),
   port: 8080,
   watchContentBase: true,
@@ -30,73 +49,74 @@ let devServer = {
     ignored: /node_modules/
   }
 };
-let common = {
-  entry: path.join(__dirname, "src", "js7", "index.js"),
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        use: "babel-loader",
-        exclude: /node_modules/
-      },
-      css,
-      {
-        test: /\.pug$/,
-        use: ["html-loader", "pug-html-loader"]
-      },
-      {
-        test: /\.(png|svg|jpe?g|gif)$/,
-        use: ["file-loader?name=[name].[ext]&outputPath=images/"]
-      },
-      {
-        test: /\.(woff|woff2|eot|ttf|otf)$/,
-        use: ["file-loader?name=[name].[ext]&outputPath=fonts/"]
-      }
-    ]
-  },
-  plugins: [
-    new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({
-      filename: "index.html",
-      template: path.join(__dirname, "src", "pug", "index.pug") // + "/pug/index.pug"
-    }),
-    new ExtractCssChunks({
-      filename: "[name].css"
-    }),
-    new webpack.HashedModuleIdsPlugin()
-  ],
-  output: {
-    filename: "[name].js",
-    path: path.resolve(__dirname, "dist")
-  },
-  optimization: {
-    runtimeChunk: "single",
-    splitChunks: {
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: "vendors",
-          chunks: "all"
-        }
+const optimization = {
+  runtimeChunk: "single",
+  splitChunks: {
+    cacheGroups: {
+      vendor: {
+        test: /[\\/]node_modules[\\/]/,
+        name: "vendors",
+        chunks: "all"
       }
     }
   }
 };
+const configES5 = {
+  entry: path.join(__dirname, "src", "js7", "index.js"),
+  module: {
+    rules: [
+      {
+        test: /\.m?js$/,
+        use: [
+          {
+            loader: "babel-loader",
+            options: {
+              configFile: configFileES5
+            }
+          }
+        ],
+        exclude: /node_modules/
+      },
+      ...rules
+    ]
+  },
+  output: {
+    filename: "[name].js",
+    path: path.resolve(__dirname, "dist")
+  },
+  optimization
+};
+const configES6 = {
+  entry: path.join(__dirname, "src", "js7", "index.js"),
+  module: {
+    rules: [
+      {
+        test: /\.m?js$/,
+        use: [
+          {
+            loader: "babel-loader",
+            options: {
+              configFile: configFileES6
+            }
+          }
+        ],
+        exclude: /node_modules/
+      },
+      ...rules
+    ]
+  },
+  output: {
+    filename: "[name].mjs",
+    path: path.resolve(__dirname, "dist")
+  },
+  optimization
+};
 module.exports = function(env, argv) {
   if (argv.mode == "production" || !argv.mode) {
-    css.use.push(
-      {
-        loader: "postcss-loader",
-        options: { plugins: [postcssPresetEnv(), cssnano] }
-      },
-      "group-css-media-queries-loader",
-      "sass-loader"
-    );
-    common.output.filename = "[name].[contenthash].js";
-    common.plugins[2] = new ExtractCssChunks({
-      filename: "[name].[contenthash].css"
-    });
-    common.plugins.push(
+    const plugins = [
+      new ExtractCssChunks({
+        filename: "[name].[contenthash].css"
+      }),
       new ImageminPlugin({
         imageminOptions: {
           plugins: [
@@ -106,25 +126,72 @@ module.exports = function(env, argv) {
             svgo({ removeViewBox: true })
           ]
         }
-      })
+      }),
+      new webpack.HashedModuleIdsPlugin()
+    ];
+    css.use.push(
+      {
+        loader: "postcss-loader",
+        options: { plugins: [postcssPresetEnv(), cssnano] }
+      },
+      "group-css-media-queries-loader",
+      "sass-loader"
     );
+    configES5.plugins = [
+      new CleanWebpackPlugin(),
+      new HtmlWebpackPlugin({
+        filename: "index.html",
+        inject: false,
+        template: path.join(__dirname, "src", "pug", "index.pug")
+      }),
+      new HtmlWebpackMultiBuildPlugin(),
+      ...plugins
+    ];
+    configES5.output.filename = "[name]_legacy.[contenthash].js";
+    configES6.output.filename = "[name].[contenthash].mjs";
+    if (argv.mode) {
+      configES6.plugins = plugins;
+      return [configES5, configES6];
+    } else {
+      configES6.plugins = [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+          filename: "index.html",
+          inject: false,
+          template: path.join(__dirname, "src", "pug", "index.pug")
+        }),
+        ...plugins
+      ];
+      return configES6;
+    }
   } else if (argv.mode == "development") {
     if (argv.hot) {
       css.use[0].options = {
         hot: true
       };
     }
+    css.use[1].options = {
+      sourceMap: true
+    };
     css.use.push({
       loader: "sass-loader",
       options: {
         sourceMap: true
       }
     });
-    css.use[1].options = {
-      sourceMap: true
-    };
-    common.devtool = "cheap-module-source-map";
-    common.devServer = devServer;
+    configES6.devtool = "cheap-module-source-map";
+    configES6.devServer = devServer;
+    configES6.plugins = [
+      new CleanWebpackPlugin(),
+      new HtmlWebpackPlugin({
+        filename: "index.html",
+        inject: false,
+        template: path.join(__dirname, "src", "pug", "index.pug")
+      }),
+      new ExtractCssChunks({
+        filename: "[name].css"
+      })
+    ];
+    return configES6;
   }
-  return common;
 };
